@@ -1,0 +1,73 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Chùa rồng (Dojo)";
+    Text = "Đang trên đường tới...";
+    Duration = 5;
+})
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Dragon Temple (Dojo)";
+    Text = "On the way...";
+    Duration = 5;
+})
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Tùy chỉnh tọa độ tại đây
+local teleportPosition = Vector3.new(5661.53, 1040, -334.96) -- Tọa độ teleport
+local lungeTargetPosition = Vector3.new(5699.36, 1207.08, 904.62) -- Tọa độ lướt
+
+-- Tốc độ lướt
+local lungeSpeed = 300 -- Tốc độ lướt (cao = nhanh)
+
+-- Hàm tính khoảng cách
+local function calculateDistance(pos1, pos2)
+    return (pos1 - pos2).Magnitude
+end
+
+-- Teleport đến vị trí
+local function teleportToPosition(position)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    humanoidRootPart.CFrame = CFrame.new(position)
+end
+
+-- Lướt đến vị trí
+local function performLunge(targetPosition)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local startPosition = humanoidRootPart.Position
+    local direction = (targetPosition - startPosition).Unit -- Hướng lướt
+    local distance = (targetPosition - startPosition).Magnitude -- Khoảng cách đến mục tiêu
+    local startTime = tick()
+
+    -- Lướt đến tọa độ mục tiêu
+    while (tick() - startTime < distance / lungeSpeed) do
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame + direction * (lungeSpeed * RunService.Heartbeat:Wait())
+    end
+end
+
+-- Logic chính
+local function executeMovement()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local currentPosition = humanoidRootPart.Position
+
+    -- Tính khoảng cách
+    local distanceToLungeFromCurrent = calculateDistance(currentPosition, lungeTargetPosition) -- Khoảng cách từ vị trí hiện tại đến tọa độ lướt
+    local distanceToLungeFromTeleport = calculateDistance(teleportPosition, lungeTargetPosition) -- Khoảng cách từ tọa độ teleport đến tọa độ lướt
+
+    -- So sánh và thực hiện hành động
+    if distanceToLungeFromCurrent < distanceToLungeFromTeleport then
+        -- Nếu gần hơn, chỉ lướt đến tọa độ lướt
+        performLunge(lungeTargetPosition)
+    else
+        -- Nếu xa hơn, teleport đến tọa độ teleport rồi lướt
+        teleportToPosition(teleportPosition)
+        task.wait(0.1) -- Đợi một chút trước khi lướt
+        performLunge(lungeTargetPosition)
+    end
+end
+
+-- Chạy script
+executeMovement()
